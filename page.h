@@ -23,9 +23,29 @@ namespace db
         uint8_t *data();
         const uint8_t *data() const;
 
+        template <typename T>
+        T read(size_t offset) const;
+
+        template <typename T>
+        void write(size_t offset, T &value);
+
+        bool is_dirty();
+
+        void mark_dirty();
+
+        void clear_dirty();
+
+        int pin_count;
+
+        void pin();
+
+        void unpin();
+
     private:
-        PageId page_id_;
+        PageId page_id;
         std::array<uint8_t, PAGE_SIZE> buffer_;
+        bool is_dirty;
+        int pin_count;
     };
 
 } // namespace db
