@@ -24,18 +24,35 @@ namespace db
         const uint8_t *data() const;
 
         template <typename T>
-        T read(size_t offset) const;
+        T read(size_t offset) const
+        {
+            if (offset + sizeof(T) > PAGE_SIZE)
+            {
+                throw std::out_of_range("Reading past the DB page");
+            }
+            T val;
+            std::memcpy(&val, buffer_.data() + offset, sizeof(T));
+            return val;
+        }
 
         template <typename T>
-        void write(size_t offset, T &value);
+        void write(size_t offset, const T &value)
+        {
+            if (offset + sizeof(T) > PAGE_SIZE)
+            {
+                throw std::out_of_range("Reading past the DB page");
+            }
+            std::memcpy(buffer_.data() + offset, &value, sizeof(T));
+            mark_dirty();
+        }
 
-        bool is_dirty();
+        bool is_dirty() const;
 
         void mark_dirty();
 
         void clear_dirty();
 
-        int pin_count();
+        int pin_count() const;
 
         void pin();
 
