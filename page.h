@@ -35,17 +35,17 @@ namespace db
 
         void clear_dirty();
 
-        int pin_count;
+        int pin_count();
 
         void pin();
 
         void unpin();
 
     private:
-        PageId page_id;
+        PageId page_id_;
         std::array<uint8_t, PAGE_SIZE> buffer_;
-        bool is_dirty;
-        int pin_count;
+        bool is_dirty_;
+        int pin_count_;
     };
 
 } // namespace db
