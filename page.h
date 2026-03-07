@@ -17,7 +17,7 @@ namespace db
     public:
         Page(PageId id);
 
-        PageId id() const;
+        PageId getId() const;
 
         // Raw byte access for serializers / B-Tree nodes
         uint8_t *data();
