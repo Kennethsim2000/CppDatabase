@@ -6,6 +6,7 @@
 
 #include <string>
 #include "page.h"
+#include <fstream>
 
 namespace db
 {
@@ -22,7 +23,7 @@ namespace db
         void write_page(const Page &page);
 
     private:
-        // TODO: file descriptor / stream
+        std::fstream stream_;
     };
 
-} // namespace db
+}
