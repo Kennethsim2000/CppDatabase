@@ -52,6 +52,7 @@ namespace db
 
         void clear_dirty();
 
+        // Used to track how many processes are pinning this page, so we do not evict from page table
         int pin_count() const;
 
         void pin();
