@@ -30,5 +30,8 @@ namespace db
         std::unordered_map<size_t, ListNode *> node_map_;
         ListNode *head;
         ListNode *tail;
+
+        void adjustLinks(ListNode *node);
+        void addToTail(ListNode *node);
     };
 }
