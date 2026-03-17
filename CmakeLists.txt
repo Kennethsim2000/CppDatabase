@@ -51,7 +51,4 @@ target_link_libraries(databasecpp PRIVATE db_core)
 if (SANITIZER_FLAGS)
     target_compile_options(databasecpp PUBLIC ${SANITIZER_FLAGS})
     target_link_options(databasecpp PUBLIC ${SANITIZER_FLAGS})
-
-    target_compile_options(databasecpp PUBLIC ${SANITIZER_FLAGS})
-    target_link_options(databasecpp PUBLIC ${SANITIZER_FLAGS})
 endif()
