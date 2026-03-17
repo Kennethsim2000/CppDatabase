@@ -50,3 +50,11 @@ void Page::unpin()
     if (pin_count_ > 0)
         pin_count_--;
 }
+
+void Page::reset()
+{
+    page_id_ = -1; // reset to INVALID PAGE_ID
+    std::memset(buffer_.data(), 0, PAGE_SIZE);
+    is_dirty_ = false;
+    pin_count_ = 0;
+}

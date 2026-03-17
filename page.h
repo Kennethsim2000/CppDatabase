@@ -59,6 +59,8 @@ namespace db
 
         void unpin();
 
+        void reset();
+
     private:
         PageId page_id_;
         std::array<uint8_t, PAGE_SIZE> buffer_;
