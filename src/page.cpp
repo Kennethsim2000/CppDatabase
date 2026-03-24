@@ -10,6 +10,11 @@ PageId Page::getId() const
     return page_id_;
 }
 
+void Page::setPageId(PageId id)
+{
+    page_id_ = id;
+}
+
 uint8_t *Page::data()
 {
     return buffer_.data();
