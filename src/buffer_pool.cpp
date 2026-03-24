@@ -4,12 +4,13 @@
 
 using namespace db;
 
-BufferPoolManager::BufferPoolManager(DiskManager &disk, size_t pool_size) : disk_(disk), capacity_(pool_size), nextpage_(0)
+BufferPoolManager::BufferPoolManager(DiskManager &disk, size_t pool_size) : disk_(disk), nextpage_(0)
 {
     for (int i = 0; i < pool_size; i++)
     {
         available_frames_.insert(i);
     }
+    pages.reserve(pool_size);
 }
 
 PageId BufferPoolManager::fetch_next_page()
@@ -38,7 +39,7 @@ Page *BufferPoolManager::fetch_page(PageId page_id)
     available_frames_.erase(frame);
     Page &p = pages[frame];
 
-    if (p.getId() > 0) // we are evicting a valid page, flush page if dirty
+    if (p.getId() != INVALID_PAGE_ID) // we are evicting a valid page, flush page if dirty
     {
         if (p.is_dirty())
         {
@@ -73,10 +74,16 @@ unpin_page, which would decrement pin_count, and call flush_page if pin_Count is
 
 void BufferPoolManager::flush_page(PageId page_id)
 {
-    size_t frame_id = page_table_[page_id];
+    auto it = page_table_.find(page_id);
+    if (it == page_table_.end())
+    {
+        return;
+    }
+    size_t frame_id = it->second;
     if (pages[frame_id].is_dirty())
     {
         disk_.write_page(pages[frame_id]);
+        pages[frame_id].clear_dirty();
     }
 }
 /*

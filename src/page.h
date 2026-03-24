@@ -11,11 +11,12 @@ namespace db
 {
 
     constexpr size_t PAGE_SIZE = 4096;
+    constexpr PageId INVALID_PAGE_ID = -1;
 
     class Page
     {
     public:
-        Page(PageId id);
+        Page();
 
         PageId getId() const;
 

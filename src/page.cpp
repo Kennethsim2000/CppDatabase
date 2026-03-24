@@ -3,7 +3,7 @@
 
 using namespace db;
 
-Page::Page(PageId id) : page_id_(id), is_dirty_(false), pin_count_(0) {}
+Page::Page() : page_id_(INVALID_PAGE_ID), is_dirty_(false), pin_count_(0) {}
 
 PageId Page::getId() const
 {

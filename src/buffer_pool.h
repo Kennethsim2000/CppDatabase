@@ -39,7 +39,6 @@ namespace db
         std::unordered_map<PageId, size_t> page_table_; // maps the pageId to the index in the vector
         LRUReplacer cache_;
         std::atomic<PageId> nextpage_;
-        size_t capacity_;
         std::unordered_set<size_t> available_frames_; // Used to store all index in the page table that has pin count of 0
     };
 
