@@ -10,6 +10,7 @@
 #include <vector>
 #include "lru_replacer.h"
 #include <atomic>
+#include <unordered_set>
 
 namespace db
 {
@@ -26,7 +27,7 @@ namespace db
         Page *fetch_page(PageId page_id);
 
         // Unpin page (allow eviction)
-        void unpin_page(PageId page_id, bool is_dirty);
+        void unpin_page(PageId page_id);
 
         void flush_page(PageId page_id);
         // void flush_all();
@@ -39,6 +40,7 @@ namespace db
         LRUReplacer cache_;
         std::atomic<PageId> nextpage_;
         size_t capacity_;
+        std::unordered_set<size_t> available_frames_; // Used to store all index in the page table that has pin count of 0
     };
 
 } // namespace db
