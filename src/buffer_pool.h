@@ -29,7 +29,7 @@ namespace db
         void unpin_page(PageId page_id, bool is_dirty);
 
         void flush_page(PageId page_id);
-        void flush_all();
+        // void flush_all();
 
     private:
         DiskManager &disk_;
@@ -38,6 +38,7 @@ namespace db
         std::unordered_map<PageId, size_t> page_table_; // maps the pageId to the index in the vector
         LRUReplacer cache_;
         std::atomic<PageId> nextpage_;
+        size_t capacity_;
     };
 
 } // namespace db

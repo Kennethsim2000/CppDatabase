@@ -31,6 +31,7 @@ std::optional<size_t> LRUReplacer::evict()
     }
 }
 
+// Used to add all the free frames to the LRUReplacer(that we can evict)
 void LRUReplacer::add(size_t frame_id)
 {
     if (node_map_.find(frame_id) != node_map_.end())
