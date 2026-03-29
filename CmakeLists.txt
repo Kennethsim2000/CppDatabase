@@ -47,8 +47,15 @@ if (ENABLE_UBSAN)
 endif()
 
 target_link_libraries(databasecpp PRIVATE db_core)
+target_include_directories(db_core
+    PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
 
 if (SANITIZER_FLAGS)
     target_compile_options(databasecpp PUBLIC ${SANITIZER_FLAGS})
     target_link_options(databasecpp PUBLIC ${SANITIZER_FLAGS})
 endif()
+
+enable_testing() 
+add_subdirectory(tests) #Go into this folder, read its CMakeLists.txt, and treat whatever is defined there as part of the same build
