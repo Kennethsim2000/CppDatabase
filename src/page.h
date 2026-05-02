@@ -66,7 +66,7 @@ namespace db
 
     private:
         PageId page_id_;
-        std::array<uint8_t, PAGE_SIZE> buffer_;
+        std::array<uint8_t, PAGE_SIZE> buffer_; // uint8_t is exactly one byte, unsigned, preferred over unsigned char
         bool is_dirty_;
         int pin_count_;
     };

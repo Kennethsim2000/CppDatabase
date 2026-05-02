@@ -6,12 +6,13 @@ using namespace db;
 
 DiskManager::DiskManager(const std::string &db_file) : stream_(db_file, std::ios::in | std::ios::out | std::ios::binary)
 {
-    if (!stream_)
+    if (!stream_) // check if opening failed, can mean file does not exist, permission issue or some other I/O errors
     {
-        std::fstream create(db_file, std::ios::out | std::ios::binary); // create the stream if not opened
-        create.close();
+        std::fstream create(db_file, std::ios::out | std::ios::binary); // create the file if does not exist
+        // this opens the file in write mode only
+        create.close(); // immediately close it
 
-        stream_.open(db_file, std::ios::in | std::ios::out | std::ios::binary);
+        stream_.open(db_file, std::ios::in | std::ios::out | std::ios::binary); // reopen it properly
         if (!stream_)
         {
             std::cerr << "Error opening file!" << std::endl;
@@ -25,8 +26,10 @@ void DiskManager::read_page(PageId page_id, Page &page)
     stream_.seekg(offset, std::ios::beg);
     // reads the stream raw bytes into the page
     stream_.read(reinterpret_cast<char *>(page.data()), PAGE_SIZE);
+    // page.data() returns uint8_t*, read() expects char*
+
     std::streamsize bytes_read = stream_.gcount();
-    if (bytes_read < PAGE_SIZE)
+    if (bytes_read < PAGE_SIZE) // handle partial reads
     {
         std::memset(page.data() + bytes_read, 0, PAGE_SIZE - bytes_read);
         stream_.clear(); // clear EOF flag
