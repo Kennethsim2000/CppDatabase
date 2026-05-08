@@ -6,40 +6,56 @@ using namespace db;
 
 TEST(DiskManagerTest, WriteThenRead)
 {
-    // Arrange
-    // create temp file
-    // create DiskManager
-    // create Page and write some data
+    const std::string filename = "test.db";
+    DiskManager dm(filename);
 
-    // Act
-    // write_page
-    // read_page into new Page
+    Page page;
+    page.setPageId(0);
+    page.write<int>(0, 42);
+    page.write<double>(8, 3.14159);
+    page.write<char>(100, 'A');
+    dm.write_page(page);
 
-    // Assert
-    // compare buffers (memcmp or loop)
+    Page loaded;
+    loaded.setPageId(0);
+    dm.read_page(0, loaded);
+
+    ASSERT_EQ(loaded.read<int>(0), 42);
+    ASSERT_DOUBLE_EQ(loaded.read<double>(8), 3.14159);
+    ASSERT_EQ(loaded.read<char>(100), 'A');
+
+    std::remove(filename.c_str());
 }
 
 TEST(DiskManagerTest, ReadBeyondEOF)
 {
-    // Arrange
-    // empty file
+    const std::string filename = "test.db";
+    DiskManager dm(filename);
 
-    // Act
-    // read_page for page_id > 0
+    Page page;
+    page.setPageId(5);
 
-    // Assert
-    // buffer should be all zeros
+    dm.read_page(5, page);
+    for (size_t i = 0; i < PAGE_SIZE; i++)
+    {
+        ASSERT_EQ(page.data()[i], 0);
+    }
+    std::remove(filename.c_str());
 }
 
 TEST(DiskManagerTest, OverwritePage)
 {
-    // Arrange
-    // write page with data A
+    const std::string filename = "test.db";
+    DiskManager dm(filename);
 
-    // Act
-    // overwrite same page with data B
-    // read back
+    Page page;
+    page.setPageId(0);
+    page.write<int>(0, 42);
+    dm.write_page(page);
+    page.write<int>(0, 100);
+    dm.write_page(page);
 
-    // Assert
-    // data == B
+    Page loaded;
+    dm.read_page(0, loaded);
+    ASSERT_EQ(100, page.read<int>(0));
 }
