@@ -6,45 +6,35 @@ using namespace db;
 TEST(PageTest, PinUnpin)
 {
     Page p;
-
-    // Act
     p.pin();
     p.pin();
     p.unpin();
-
-    // Assert
-    // pin_count == 1
+    ASSERT_EQ(1, p.pin_count());
 }
 
 TEST(PageTest, DirtyFlag)
 {
     Page p;
-
-    // Act
     p.mark_dirty();
-
-    // Assert
-    // is_dirty == true
-
-    // Act
+    ASSERT_TRUE(p.is_dirty());
     p.clear_dirty();
-
-    // Assert
-    // is_dirty == false
+    ASSERT_FALSE(p.is_dirty());
 }
 
 TEST(PageTest, Reset)
 {
     Page p;
-
-    // Arrange
-    // set id, dirty, pin, write data
-
-    // Act
+    p.setPageId(42);
+    p.mark_dirty();
+    p.write<int>(0, 123);
     p.reset();
 
     // Assert
-    // id == INVALID
-    // buffer zeroed
-    // pin_count == 0
+    ASSERT_EQ(p.getId(), INVALID_PAGE_ID);
+    ASSERT_EQ(p.pin_count(), 0);
+    ASSERT_FALSE(p.is_dirty());
+    for (size_t i = 0; i < PAGE_SIZE; i++)
+    {
+        ASSERT_EQ(p.data()[i], 0);
+    }
 }
