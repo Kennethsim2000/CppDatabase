@@ -2,89 +2,71 @@
 
 using namespace db;
 
-LRUReplacer::LRUReplacer() : head(nullptr), tail(nullptr)
+LRUReplacer::LRUReplacer(size_t capacity)
 {
 }
 
-LRUReplacer::~LRUReplacer()
-{
-    ListNode *curr = head;
-    while (curr != tail)
-    {
-        ListNode *nextNode = curr->next_;
-        delete curr;
-        curr = nextNode;
-    }
-}
-
-std::optional<size_t> LRUReplacer::evict()
-{
-    if (head == nullptr) // empty list
-    {
-        return std::nullopt;
-    }
-    else
-    {
-        size_t frame = head->frame_id_;
-        remove(frame);
-        return frame;
-    }
-}
-
-// Used to add all the free frames to the LRUReplacer(that we can evict)
-void LRUReplacer::add(size_t frame_id)
-{
-    if (node_map_.find(frame_id) != node_map_.end())
-    {
-        // node already exist, need to move it to the tail
-        ListNode *frameNode = node_map_[frame_id];
-        if (frameNode != tail)
-        {
-            adjustLinks(frameNode);
-            addToTail(frameNode);
-        }
-    }
-    else
-    {
-        // node does not exist, new frameId
-        ListNode *node = new ListNode();
-        addToTail(node);
-    }
-}
-
-// This method is mainly for adjusting links, when we remove this node, we need to link
-// the previous node to the next node
-void LRUReplacer::adjustLinks(ListNode *node)
-{
-    if (node == head) // single element
-    {
-        ListNode *nextNode = node->next_;
-        node->next_ = nullptr;
-        nextNode->prev_ = nullptr;
-        head = nextNode;
-    }
-    else
-    {
-        ListNode *prevNode = node->prev_;
-        ListNode *nextNode = node->next_;
-        prevNode->next_ = nextNode;
-        nextNode->prev_ = prevNode;
-    }
-}
-
-void LRUReplacer::addToTail(ListNode *node)
-{
-}
-
+// pin a frame, remove from the LRU
 void LRUReplacer::remove(size_t frame_id)
 {
-    ListNode *node = node_map_[frame_id];
-    node_map_.erase(frame_id);
-    adjustLinks(node);
-    delete node; // we no longer need this node, safe to free node
+    auto it = map_.find(frame_id);
+    if (it == map_.end())
+    {
+        return;
+    }
+    map_.erase(it);
+    lru_.erase(it->second);
+}
+
+//
+void LRUReplacer::add(size_t frame_id)
+{
+    if (map_.count(frame_id))
+    { // frame_id exists in the LRUReplacer
+        return;
+    }
+    lru_.push_back(frame_id);
+    auto it = std::prev(lru_.end());
+    map_.emplace(frame_id, it);
+}
+
+bool LRUReplacer::evict(size_t &frame_id)
+{
+    if (lru_.empty())
+    {
+        return false;
+    }
+    frame_id = lru_.front();
+    lru_.pop_front();
+    map_.erase(frame_id);
+    return true;
 }
 
 size_t LRUReplacer::size()
 {
-    return node_map_.size();
+    return map_.size();
 }
+
+/*
+
+Remove method is meant to remove the ListNode entirely from the LRUReplacer(not just adjusting it to the end).
+It is meant for evicting a page(to be used in the page table), so in this case, our ListNode* can be deleted.
+
+Adjust Links need to consider another pattern(if head == tail, meaning one element, we need to set head and tail to nullptr, else if node == head(first element), then we ened to shift the head pointer, else we do the classic assign next to prev and prev to next)
+
+addToTail would just be if head == nullptr, set head and tail to the node, else we will obtain the tail, and assign the next and prev pointer, and update tail
+
+why do we need LRU
+our buffer pool has a fixed number of frames:
+
+pages = [ frame0, frame1, frame2, frame3 ]Each frame may contain a page from disk.
+If the pool is full and a new page must be loaded:
+
+fetch_page(new_page)you must evict an existing page.
+
+But you cannot evict pages that are pinned.
+So the system must track:
+which frames are evictable
+among them, which one is least recently used
+
+This is what LRUReplacer does.*/
