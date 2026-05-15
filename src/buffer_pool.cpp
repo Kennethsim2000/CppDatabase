@@ -37,7 +37,7 @@ Page *BufferPoolManager::fetch_page(PageId page_id)
         return &p; // return a pointer to the page table, so that we can possibly modify this page
     }
 
-    // Else we need a free frame. We can first try frree_frames, else we can try to evict from LRUReplacer
+    // Else we need a free frame. We can first try free_frames, else we can try to evict from LRUReplacer
     if (free_frames_.empty()) // have to get from LRUReplacer
     {
         size_t evictedFrame;
@@ -76,10 +76,13 @@ Page *BufferPoolManager::fetch_page(PageId page_id)
 }
 
 // Unpin page (allow eviction)
+// find page in page table, decrement pin count,
 void BufferPoolManager::unpin_page(PageId page_id)
 {
     /* Usually the client would call fetch_page, work on it, if edit, call page->markDirty(), then they would call
 unpin_page, which would decrement pin_count, and call flush_page if pin_Count is 0.*/
+    std::scoped_lock lock(latch_);
+
     auto it = page_table_.find(page_id);
     if (it == page_table_.end())
         return;
@@ -88,7 +91,7 @@ unpin_page, which would decrement pin_count, and call flush_page if pin_Count is
     page.unpin();
     if (page.pin_count() == 0)
     {
-        available_frames_.insert(frame);
+        cache_.add(frame);
     }
 }
 
