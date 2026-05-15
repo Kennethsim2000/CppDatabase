@@ -11,6 +11,7 @@
 #include "lru_replacer.h"
 #include <atomic>
 #include <unordered_set>
+#include <queue>
 
 namespace db
 {
@@ -39,33 +40,18 @@ namespace db
         std::unordered_map<PageId, size_t> page_table_; // maps the pageId to the index in the vector
         LRUReplacer cache_;
         std::atomic<PageId> nextpage_;
-        std::unordered_set<size_t> available_frames_; // Used to store all index in the page table that has pin count of 0
+        std::queue<size_t> free_frames_;
     };
 
 } // namespace db
 
 /*
-flow
-Is page_id already in the page table --> yes(fetch Page)
-No --> Is there a free slot? (call DiskManager to fetch page, and store the page in the vector)
-No free slot-->Can we evict something
+Free frame --> Contains NO valid cached page
+LRU frame --> Contains a valid page that MAY be evicted
 
-fetch_page(new_page_id):
-Pool is full, no free frames
-↓
-LRU says: evict frame 2
-↓
-pool_[2] is dirty?
-→ Yes: disk_.write_page(pool_[2]) ← write happens here
-↓
-Reuse frame 2 for new_page_id
+Suppose we are keeping both in the same set
+free_frames = {0,1,2}
+You cannot distinguish between frame 0 is empty VS frame 0 contains page 99
+So when reusing, should you flush? Should you erase page table? Is it safe?
 
-new_page():
-1. Assign the next available PageId (0, 1, 2, 3...)
-2. Find a free frame in the pool
-(or evict if pool is full)
-3. Zero out the buffer(prev page data)
-4. Pin it
-5. Add to page table
-6. Return pointer to the page
 */

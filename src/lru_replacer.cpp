@@ -14,8 +14,8 @@ void LRUReplacer::remove(size_t frame_id)
     {
         return;
     }
-    map_.erase(it);
     lru_.erase(it->second);
+    map_.erase(it);
 }
 
 //

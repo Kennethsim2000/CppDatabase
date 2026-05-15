@@ -4,13 +4,13 @@
 
 using namespace db;
 
-BufferPoolManager::BufferPoolManager(DiskManager &disk, size_t pool_size) : disk_(disk), nextpage_(0)
+BufferPoolManager::BufferPoolManager(DiskManager &disk, size_t pool_size) : disk_(disk), cache_(pool_size), nextpage_(0)
 {
+    pages.resize(pool_size);
     for (int i = 0; i < pool_size; i++)
     {
-        available_frames_.insert(i);
+        free_frames_.push(i);
     }
-    pages.reserve(pool_size);
 }
 
 PageId BufferPoolManager::fetch_next_page()
@@ -18,41 +18,61 @@ PageId BufferPoolManager::fetch_next_page()
     return nextpage_.fetch_add(1);
 }
 
+/*
+1. If page already cached in page_table, then we pin page, remove from LRUReplacer, and return
+2. Else, we need a free frame. We can first try free_frames, else we can try to evict from the LRUReplacer
+
+*/
 Page *BufferPoolManager::fetch_page(PageId page_id)
 {
+    std::scoped_lock lock(latch_);
+
     auto it = page_table_.find(page_id);
     if (it != page_table_.end()) // already in page table, loaded previously
     {
-        size_t frame = page_table_[page_id];
-        available_frames_.erase(frame); // this frame is no longer free for loading frames
-        pages[frame].pin();
-        return &pages[frame]; // return a pointer to the page table, so that we can possibly modify this page
+        size_t frame = it->second;
+        cache_.remove(frame);
+        Page &p = pages[frame];
+        p.pin();
+        return &p; // return a pointer to the page table, so that we can possibly modify this page
     }
 
-    // Need to load new page into our page table and page vector
-    if (available_frames_.empty())
-    { // no free frames to load in our page table
-        return nullptr;
-    }
-
-    size_t frame = *available_frames_.begin();
-    available_frames_.erase(frame);
-    Page &p = pages[frame];
-
-    if (p.getId() != INVALID_PAGE_ID) // we are evicting a valid page, flush page if dirty
+    // Else we need a free frame. We can first try frree_frames, else we can try to evict from LRUReplacer
+    if (free_frames_.empty()) // have to get from LRUReplacer
     {
-        if (p.is_dirty())
+        size_t evictedFrame;
+        if (cache_.evict(evictedFrame))
         {
-            disk_.write_page(p);
+            Page &p = pages[evictedFrame];
+            if (p.is_dirty())
+            {
+                disk_.write_page(p);
+            }
+            page_table_.erase(p.getId());
+            p.reset();
+            p.setPageId(page_id);
+            disk_.read_page(page_id, p);
+            page_table_[page_id] = evictedFrame;
+            p.pin();
+            return &p;
         }
-        page_table_.erase(p.getId());
+        else
+        { // no possible frames to be evicted
+            return nullptr;
+        }
     }
-
-    disk_.read_page(page_id, p);
-    p.setPageId(page_id);
-    page_table_[page_id] = frame;
-    p.pin();
-    return &p;
+    else
+    {
+        size_t frameId = free_frames_.front();
+        free_frames_.pop();
+        Page &p = pages[frameId];
+        p.reset();
+        p.setPageId(page_id);
+        disk_.read_page(page_id, p);
+        p.pin();
+        page_table_[page_id] = frameId;
+        return &p;
+    }
 }
 
 // Unpin page (allow eviction)
