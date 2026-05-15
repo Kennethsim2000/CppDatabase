@@ -94,16 +94,19 @@ unpin_page, which would decrement pin_count, and call flush_page if pin_Count is
 
 void BufferPoolManager::flush_page(PageId page_id)
 {
+    std::scoped_lock lock(latch_);
+
     auto it = page_table_.find(page_id);
     if (it == page_table_.end())
     {
         return;
     }
     size_t frame_id = it->second;
-    if (pages[frame_id].is_dirty())
+    Page &p = pages[frame_id];
+    if (p.is_dirty())
     {
-        disk_.write_page(pages[frame_id]);
-        pages[frame_id].clear_dirty();
+        disk_.write_page(p);
+        p.clear_dirty();
     }
 }
 /*
