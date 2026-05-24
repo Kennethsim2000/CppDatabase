@@ -36,3 +36,34 @@ namespace db
         std::vector<PageId> pages;
     };
 }
+
+/*
+TableHeap manages many TablePages, it represents an actual database table
+
+Suppose users table
+Page 0 -> rows 1 - 50
+Page 1 -> rows 51-100
+Page 2 -> rows 101-150
+
+Example insertion flow
+Tuple tuple;
+table_heap.insert_tuple(tuple)
+
+Step 1: Tableheap finds page
+PageId pid = ...
+
+Step 2: Fetch page from BPM
+Page* page = bpm.fetch_page(pid)
+Now, page is in memory
+
+Step 3 -- Wrap page as TablePage
+TablePage tp(page)
+you are converting raw bytes into slotted-page structure
+
+Step 4 -- Insert tuple
+tp.insert_tuple(tuple, rid)
+
+Step 5 -- Unpin page
+bpm.unpin_page(pid)
+
+*/

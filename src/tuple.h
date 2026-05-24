@@ -10,7 +10,7 @@ namespace db
     {
     public:
         Tuple() = default;
-        explicit Tuple(const std::vector<char> &data) : data_(data) {}
+        explicit Tuple(const std::vector<char> &data) : data_(std::move(data)) {}
 
         const char *data() const
         {

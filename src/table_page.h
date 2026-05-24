@@ -4,6 +4,14 @@ Initially:
     append-only
     no deletes
     fixed-size tuples
+
+The tablepage manages tuples inside one page
+
+Header
+slot directory
+Tuple Data
+
+TablePage only manages one physical page, not the entire table
 */
 
 #pragma once
@@ -14,10 +22,24 @@ Initially:
 
 namespace db
 {
+    struct TablePageHeader
+    {
+        uint16_t tuple_count;
+        uint16_t free_space_ptr;
+    };
+
+    struct Slot
+    {
+        uint16_t offset;
+        uint16_t size;
+    };
+
     class TablePage
     {
     public:
         explicit TablePage(Page *page);
+
+        void init();
 
         /* 1. Compute write offset
            2. Copy bytes into page
@@ -37,5 +59,9 @@ namespace db
 
     private:
         Page *page_;
+
+        TablePageHeader *header;
+
+        Slot *slots();
     };
 }
