@@ -25,9 +25,15 @@ namespace db
     struct TablePageHeader
     {
         uint16_t tuple_count;
+
+        // pointer keeping track of where should the next tuple be written
+        // Initial value, free space starts at the very end of the page
         uint16_t free_space_ptr;
     };
 
+    // Suppose tuples are variable size, how do we know where tuple B starts
+    // Tuple A stored at offset 4046 size 50
+    // Tuple B stored at offset 3926 size 120
     struct Slot
     {
         uint16_t offset;
@@ -60,8 +66,28 @@ namespace db
     private:
         Page *page_;
 
-        TablePageHeader *header;
+        TablePageHeader *header();
 
         Slot *slots();
     };
 }
+
+/*
++---------------------------+
+| Header                    |
+| tuple_count               |
+| free_space_ptr            |
++---------------------------+
+| Slot 0                    |
+| Slot 1                    |
+| Slot 2                    |
++---------------------------+
+
+        FREE SPACE
+
++---------------------------+
+| Tuple bytes               |
+| Tuple bytes               |
+| Tuple bytes               |
++---------------------------+
+*/
