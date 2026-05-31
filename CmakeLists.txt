@@ -13,6 +13,8 @@ add_library(db_core
     src/disk_manager.cpp
     src/page.cpp
     src/lru_replacer.cpp
+    src/table_page.cpp
+    src/table_heap.cpp
 )
 
 add_executable(databasecpp
