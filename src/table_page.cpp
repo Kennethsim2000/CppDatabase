@@ -31,18 +31,18 @@ bool TablePage::has_space(size_t tuple_size)
     return space_left >= tuple_size + sizeof(Slot);
 }
 
+/*
+      STEP 1 -- check space
+      STEP 2 -- Get header
+      STEP 3 -- Move free space pointer backward
+      STEP 4 -- copy tuple bytes
+      STEP 5 -- Write slot metadata
+      STEP 6 -- create RID
+      step 7 -- increment tuple count(in header)
+      step 8 -- Mark page as dirty
+  */
 bool TablePage::insert_tuple(const Tuple &tuple, RID &rid)
 {
-    /*
-        STEP 1 -- check space
-        STEP 2 -- Get header
-        STEP 3 -- Move free space pointer backward
-        STEP 4 -- copy tuple bytes
-        STEP 5 -- Write slot metadata
-        STEP 6 -- create RID
-        step 7 -- increment tuple count(in header)
-        step 8 -- Mark page as dirty
-    */
     if (!has_space(tuple.size()))
     {
         return false;
@@ -82,7 +82,7 @@ bool TablePage::get_tuple(const RID &rid, Tuple &tuple)
     */
     auto *h = header();
 
-    if (rid.slot_num > h->tuple_count)
+    if (rid.slot_num >= h->tuple_count)
     {
         return false;
     }

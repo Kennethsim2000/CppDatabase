@@ -66,4 +66,19 @@ tp.insert_tuple(tuple, rid)
 Step 5 -- Unpin page
 bpm.unpin_page(pid)
 
+TableHeap
+│
+├── Page 0 (TablePage)
+│     ├── Tuple 0
+│     ├── Tuple 1
+│     └── Tuple 2
+│
+├── Page 1 (TablePage)
+│     ├── Tuple 0
+│     ├── Tuple 1
+│     └── Tuple 2
+│
+└── Page 2 (TablePage)
+      ├── Tuple 0
+      └── Tuple 1
 */
