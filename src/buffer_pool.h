@@ -33,6 +33,8 @@ namespace db
         void flush_page(PageId page_id);
         // void flush_all();
 
+        Page *load_page_into_frame(PageId page_id, size_t frame_id);
+
     private:
         DiskManager &disk_;
         std::mutex latch_;

@@ -27,52 +27,48 @@ Page *BufferPoolManager::fetch_page(PageId page_id)
 {
     std::scoped_lock lock(latch_);
 
+    // Page is already in memory
     auto it = page_table_.find(page_id);
-    if (it != page_table_.end()) // already in page table, loaded previously
+    if (it != page_table_.end())
     {
-        size_t frame = it->second;
-        cache_.remove(frame);
-        Page &p = pages[frame];
-        p.pin();
-        return &p; // return a pointer to the page table, so that we can possibly modify this page
-    }
+        size_t frame_id = it->second;
 
-    // Else we need a free frame. We can first try free_frames, else we can try to evict from LRUReplacer
-    if (free_frames_.empty()) // have to get from LRUReplacer
-    {
-        size_t evictedFrame;
-        if (cache_.evict(evictedFrame))
-        {
-            Page &p = pages[evictedFrame];
-            if (p.is_dirty())
-            {
-                disk_.write_page(p);
-            }
-            page_table_.erase(p.getId());
-            p.reset();
-            p.setPageId(page_id);
-            disk_.read_page(page_id, p);
-            page_table_[page_id] = evictedFrame;
-            p.pin();
-            return &p;
-        }
-        else
-        { // no possible frames to be evicted
-            return nullptr;
-        }
-    }
-    else
-    {
-        size_t frameId = free_frames_.front();
-        free_frames_.pop();
-        Page &p = pages[frameId];
-        p.reset();
-        p.setPageId(page_id);
-        disk_.read_page(page_id, p);
+        cache_.remove(frame_id);
+
+        Page &p = pages[frame_id];
         p.pin();
-        page_table_[page_id] = frameId;
+
         return &p;
     }
+
+    // Try to use a free frame first
+    if (!free_frames_.empty())
+    {
+        size_t frame_id = free_frames_.front();
+        free_frames_.pop();
+
+        return load_page_into_frame(page_id, frame_id);
+    }
+
+    // No free frames, try to evict from LRU
+    size_t evicted_frame;
+
+    if (!cache_.evict(evicted_frame))
+    {
+        // Every page is pinned
+        return nullptr;
+    }
+
+    Page &evicted_page = pages[evicted_frame];
+
+    if (evicted_page.is_dirty())
+    {
+        disk_.write_page(evicted_page);
+    }
+
+    page_table_.erase(evicted_page.getId());
+
+    return load_page_into_frame(page_id, evicted_frame);
 }
 
 // Unpin page (allow eviction)
@@ -111,6 +107,20 @@ void BufferPoolManager::flush_page(PageId page_id)
         disk_.write_page(p);
         p.clear_dirty();
     }
+}
+
+Page *BufferPoolManager::load_page_into_frame(PageId page_id, size_t frame_id)
+{
+    Page &p = pages[frame_id];
+
+    p.reset();
+    p.setPageId(page_id);
+    disk_.read_page(page_id, p);
+
+    page_table_[page_id] = frame_id;
+    p.pin();
+
+    return &p;
 }
 /*
 We can first obtain the frame_id from the page_table using this pageId, obtain the page, if it is dirty, we
