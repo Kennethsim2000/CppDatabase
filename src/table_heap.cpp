@@ -2,7 +2,7 @@
 
 using namespace db;
 
-explicit TableHeap::TableHeap(BufferPoolManager &bpm) : bpm_(bpm) {};
+TableHeap::TableHeap(BufferPoolManager &bpm) : bpm_(bpm) {};
 
 RID TableHeap::insert_tuple(const Tuple &tuple)
 {
