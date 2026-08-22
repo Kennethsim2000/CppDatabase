@@ -5,32 +5,51 @@
 
 using namespace db;
 
-TEST(BufferPoolTest, FetchNewPage)
+class BufferPoolTest : public ::testing::Test
 {
-    // Arrange
-    // create DiskManager + BufferPoolManager
+protected:
+    std::string filename = "test_buffer_pool.db";
 
-    // Act
-    // fetch_page(some_id)
+    void SetUp() override
+    { // Remove old test database before each test
+        std::filesystem::remove(filename);
+    }
+    void TearDown() override
+    {
+        std::filesystem::remove(filename);
+    }
+};
 
-    // Assert
-    // page != nullptr
-    // page->getId() == some_id
+TEST_F(BufferPoolTest, FetchNewPage)
+{
+    DiskManager disk(filename);
+    BufferPoolManager bpm(disk, 2);
+
+    PageId page_id = bpm.fetch_next_page();
+    Page *page = bpm.fetch_page(page_id);
+    ASSERT_NE(page, nullptr);
+    EXPECT_EQ(page->getId(), page_id);
+    EXPECT_EQ(page->pin_count(), 1);
+    bpm.unpin_page(page_id);
 }
 
-TEST(BufferPoolTest, FetchSamePageTwice)
+TEST_F(BufferPoolTest, FetchSamePageTwice)
 {
-    // Arrange
+    DiskManager disk(filename);
+    BufferPoolManager bpm(disk, 2);
 
-    // Act
-    // Page *p1 = ...;
-    // Page *p2 = ...;
+    PageId page_id = bpm.fetch_next_page();
+    Page *p1 = bpm.fetch_page(page_id);
+    ASSERT_NE(p1, nullptr);
+    bpm.unpin_page(page_id);
 
-    // Assert
-    // p1 == p2 (same frame)
+    Page *p2 = bpm.fetch_page(page_id);
+    ASSERT_NE(p2, nullptr); // Both fetches should point to the same physical frame
+    EXPECT_EQ(p1, p2);
+    bpm.unpin_page(page_id);
 }
 
-TEST(BufferPoolTest, UnpinMakesFrameAvailable)
+TEST_F(BufferPoolTest, UnpinMakesFrameAvailable)
 {
     // Arrange
 
@@ -42,7 +61,7 @@ TEST(BufferPoolTest, UnpinMakesFrameAvailable)
     // frame is available again (indirect check via next fetch)
 }
 
-TEST(BufferPoolTest, EvictionWhenFull)
+TEST_F(BufferPoolTest, EvictionWhenFull)
 {
     // Arrange
     // small pool size (e.g. 1)
@@ -56,7 +75,7 @@ TEST(BufferPoolTest, EvictionWhenFull)
     // A should be evicted
 }
 
-TEST(BufferPoolTest, DirtyPageFlushOnEvict)
+TEST_F(BufferPoolTest, DirtyPageFlushOnEvict)
 {
     // Arrange
     // pool size = 1
@@ -71,7 +90,7 @@ TEST(BufferPoolTest, DirtyPageFlushOnEvict)
     // read A from disk → changes persisted
 }
 
-TEST(BufferPoolTest, PinnedPageNotEvicted)
+TEST_F(BufferPoolTest, PinnedPageNotEvicted)
 {
     // Arrange
     // pool size = 1
