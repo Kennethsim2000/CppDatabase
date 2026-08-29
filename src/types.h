@@ -14,10 +14,12 @@ namespace db
     using PageId = uint64_t;
     using TxnId = uint64_t;
 
-    // Represents a record stored in the database
-    struct Record
+    enum class TypeId
     {
-        // TODO: define record layout (key/value, schema-aware, etc.)
+        INTEGER,
+        BIGINT,
+        BOOLEAN,
+        VARCHAR
     };
 
 } // namespace db
