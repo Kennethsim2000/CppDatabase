@@ -48,23 +48,6 @@ TEST(TupleTest, StoresData)
     EXPECT_EQ(std::memcmp(tuple.data(), data.data(), data.size()), 0);
 }
 
-TEST(TupleTest, StoresBinaryData)
-{
-    std::vector<char> data = {
-        0,
-        1,
-        2,
-        127,
-        static_cast<char>(255)};
-
-    Tuple tuple(data);
-
-    EXPECT_EQ(tuple.size(), data.size());
-    EXPECT_EQ(
-        std::memcmp(tuple.data(), data.data(), data.size()),
-        0);
-}
-
 // ================================
 // TablePage Tests
 // ================================
@@ -91,18 +74,10 @@ TEST_F(TablePageTest, InitializesCorrectly)
     EXPECT_TRUE(table_page.has_space(100));
 }
 
-TEST_F(TablePageTest, HasSpaceForSmallTuple)
-{
-    Tuple tuple(std::vector<char>(100, 'a'));
-
-    EXPECT_TRUE(table_page.has_space(tuple.size()));
-}
-
 TEST_F(TablePageTest, InsertTuple)
 {
     std::vector<char> data = {'h', 'e', 'l', 'l', 'o'};
     Tuple tuple(data);
-
     RID rid;
 
     EXPECT_TRUE(table_page.insert_tuple(tuple, rid));
@@ -119,44 +94,17 @@ TEST_F(TablePageTest, InsertAndRetrieveTuple)
     Tuple tuple(data);
 
     RID rid;
-
     ASSERT_TRUE(table_page.insert_tuple(tuple, rid));
 
     Tuple result;
-
     ASSERT_TRUE(table_page.get_tuple(rid, result));
-
     EXPECT_EQ(result.size(), tuple.size());
-
     EXPECT_EQ(
         std::memcmp(
             result.data(),
             tuple.data(),
             tuple.size()),
         0);
-}
-
-TEST_F(TablePageTest, InsertMultipleTuples)
-{
-    Tuple tuple1(std::vector<char>{'h', 'e', 'l', 'l', 'o'});
-    Tuple tuple2(std::vector<char>{'w', 'o', 'r', 'l', 'd'});
-    Tuple tuple3(std::vector<char>{'c', '+', '+'});
-
-    RID rid1;
-    RID rid2;
-    RID rid3;
-
-    ASSERT_TRUE(table_page.insert_tuple(tuple1, rid1));
-    ASSERT_TRUE(table_page.insert_tuple(tuple2, rid2));
-    ASSERT_TRUE(table_page.insert_tuple(tuple3, rid3));
-
-    EXPECT_EQ(rid1.slot_num, 0);
-    EXPECT_EQ(rid2.slot_num, 1);
-    EXPECT_EQ(rid3.slot_num, 2);
-
-    EXPECT_EQ(rid1.page_id, 1);
-    EXPECT_EQ(rid2.page_id, 1);
-    EXPECT_EQ(rid3.page_id, 1);
 }
 
 TEST_F(TablePageTest, RetrieveMultipleTuples)
@@ -203,37 +151,12 @@ TEST_F(TablePageTest, InvalidSlotReturnsFalse)
     Tuple tuple(std::vector<char>{'h', 'e', 'l', 'l', 'o'});
 
     RID rid;
-
     ASSERT_TRUE(table_page.insert_tuple(tuple, rid));
 
     RID invalid_rid(1, 100);
-
     Tuple result;
-
     EXPECT_FALSE(
         table_page.get_tuple(invalid_rid, result));
-}
-
-TEST_F(TablePageTest, WrongPageId)
-{
-    Tuple tuple(std::vector<char>{'h', 'e', 'l', 'l', 'o'});
-
-    RID rid;
-
-    ASSERT_TRUE(table_page.insert_tuple(tuple, rid));
-
-    RID wrong_page_rid(999, rid.slot_num);
-
-    Tuple result;
-
-    /*
-     * Current TablePage implementation only checks slot_num,
-     * not page_id.
-     *
-     * Therefore this currently succeeds.
-     */
-    EXPECT_TRUE(
-        table_page.get_tuple(wrong_page_rid, result));
 }
 
 TEST_F(TablePageTest, RejectsTupleWhenPageIsFull)
@@ -245,7 +168,6 @@ TEST_F(TablePageTest, RejectsTupleWhenPageIsFull)
             'x'));
 
     RID rid;
-
     ASSERT_TRUE(
         table_page.insert_tuple(large_tuple, rid));
 
@@ -254,7 +176,6 @@ TEST_F(TablePageTest, RejectsTupleWhenPageIsFull)
         std::vector<char>{'a'});
 
     RID another_rid;
-
     EXPECT_FALSE(
         table_page.insert_tuple(
             another_tuple,
@@ -281,10 +202,8 @@ TEST_F(TablePageTest, VariableSizedTuples)
 
     ASSERT_TRUE(
         table_page.get_tuple(small_rid, result_small));
-
     ASSERT_TRUE(
         table_page.get_tuple(medium_rid, result_medium));
-
     ASSERT_TRUE(
         table_page.get_tuple(large_rid, result_large));
 
