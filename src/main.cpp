@@ -2,7 +2,6 @@
 // File: src/main.cpp
 // Entry point – wire everything together
 // ================================
-#include "btree.h"
 #include "buffer_pool.h"
 #include "disk_manager.h"
 
