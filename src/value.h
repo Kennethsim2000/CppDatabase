@@ -7,7 +7,7 @@ namespace db
     class Value
     {
     public:
-        static Value Integer(int32_t value)
+        static Value Integer(int32_t value) // factory methods to create a value
         {
             Value v;
             v.type_ = TypeId::INTEGER;
