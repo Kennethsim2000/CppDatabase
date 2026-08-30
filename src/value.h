@@ -15,6 +15,22 @@ namespace db
             return v;
         }
 
+        static Value BigInt(int64_t value)
+        {
+            Value v;
+            v.type_ = TypeId::BIGINT;
+            v.bigint_value_ = value;
+            return v;
+        }
+
+        static Value Boolean(bool value)
+        {
+            Value v;
+            v.type_ = TypeId::BOOLEAN;
+            v.bool_value_ = value;
+            return v;
+        }
+
         static Value Varchar(const std::string &value)
         {
             Value v;
@@ -33,6 +49,16 @@ namespace db
             return int_value_;
         }
 
+        int64_t as_bigint() const
+        {
+            return bigint_value_;
+        }
+
+        bool as_bool() const
+        {
+            return bool_value_;
+        }
+
         const std::string &as_string() const
         {
             return string_value_;
@@ -41,7 +67,9 @@ namespace db
     private:
         TypeId type_;
 
-        int32_t int_value_;
+        int32_t int_value_ = 0;
+        int64_t bigint_value_ = 0;
+        bool bool_value_ = false;
         std::string string_value_;
     };
 
