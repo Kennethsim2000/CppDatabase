@@ -15,6 +15,7 @@ add_library(db_core
     src/lru_replacer.cpp
     src/table_page.cpp
     src/table_heap.cpp
+    src/tuple.cpp
 )
 
 add_executable(databasecpp
