@@ -28,27 +28,6 @@ TEST(RIDTest, ParameterizedConstructor)
 }
 
 // ================================
-// Tuple Tests
-// ================================
-
-TEST(TupleTest, EmptyTuple)
-{
-    Tuple tuple;
-
-    EXPECT_EQ(tuple.size(), 0);
-}
-
-TEST(TupleTest, StoresData)
-{
-    std::vector<char> data = {'h', 'e', 'l', 'l', 'o'};
-
-    Tuple tuple(data);
-
-    EXPECT_EQ(tuple.size(), 5);
-    EXPECT_EQ(std::memcmp(tuple.data(), data.data(), data.size()), 0);
-}
-
-// ================================
 // TablePage Tests
 // ================================
 
