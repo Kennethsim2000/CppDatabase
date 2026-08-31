@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
 
 #include "value.h"
+#include "column.h"
+#include "schema.h"
 
 using namespace db;
 
@@ -43,10 +45,10 @@ TEST(ColumnTest, CreateIntegerColumn)
     EXPECT_EQ(column.name(), "id");
     EXPECT_EQ(column.type(), TypeId::INTEGER);
 
-    Column column("name", TypeId::VARCHAR);
+    Column column2("name", TypeId::VARCHAR);
 
-    EXPECT_EQ(column.name(), "name");
-    EXPECT_EQ(column.type(), TypeId::VARCHAR);
+    EXPECT_EQ(column2.name(), "name");
+    EXPECT_EQ(column2.type(), TypeId::VARCHAR);
 }
 
 // ================================
