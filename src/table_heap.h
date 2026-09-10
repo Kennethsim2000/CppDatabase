@@ -31,6 +31,18 @@ namespace db
         */
         bool get_tuple(const RID &rid, Tuple &tuple);
 
+        /*
+            Scan every tuple in the table.
+
+            1. Iterate through every page
+            2. Fetch page from BPM
+            3. Iterate through every slot
+            4. Generate a RID for each tuple
+            5. Unpin page
+            6. Return all RIDs
+        */
+        std::vector<RID> scan();
+
     private:
         BufferPoolManager &bpm_;
         std::vector<PageId> pages;

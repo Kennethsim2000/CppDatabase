@@ -56,3 +56,30 @@ bool TableHeap::get_tuple(const RID &rid, Tuple &tuple)
 
     return success;
 };
+
+std::vector<RID> TableHeap::scan()
+{
+    std::vector<RID> rids;
+
+    for (PageId pid : pages)
+    {
+        Page *page = bpm_.fetch_page(pid);
+
+        if (page == nullptr)
+        {
+            continue;
+        }
+
+        TablePage tp(page);
+        uint16_t count = tp.tuple_count();
+
+        for (uint16_t slot = 0; slot < count; slot++)
+        {
+            rids.emplace_back(pid, slot);
+        }
+
+        bpm_.unpin_page(pid);
+    }
+
+    return rids;
+}
