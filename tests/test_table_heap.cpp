@@ -194,3 +194,99 @@ TEST_F(TableHeapTest, InvalidRIDReturnsFalse)
             invalid_rid,
             result));
 }
+
+TEST_F(TableHeapTest, ScanSinglePage)
+{
+    for (int i = 0; i < 10; i++)
+    {
+        Tuple tuple(
+            {Value::Integer(i),
+             Value::Varchar("user"),
+             Value::Boolean(true),
+             Value::BigInt(i * 100)},
+            schema);
+
+        table_heap.insert_tuple(tuple);
+    }
+
+    std::vector<RID> rids = table_heap.scan();
+
+    ASSERT_EQ(rids.size(), 10);
+
+    for (int i = 0; i < 10; i++)
+    {
+        EXPECT_EQ(rids[i].slot_num, i);
+    }
+}
+
+TEST_F(TableHeapTest, ScanReturnsValidRIDs)
+{
+    for (int i = 0; i < 10; i++)
+    {
+        Tuple tuple(
+            {Value::Integer(i),
+             Value::Varchar("user"),
+             Value::Boolean(i % 2 == 0),
+             Value::BigInt(i * 100)},
+            schema);
+
+        table_heap.insert_tuple(tuple);
+    }
+
+    std::vector<RID> rids = table_heap.scan();
+
+    ASSERT_EQ(rids.size(), 10);
+
+    for (int i = 0; i < 10; i++)
+    {
+        Tuple result;
+
+        ASSERT_TRUE(
+            table_heap.get_tuple(rids[i], result));
+        EXPECT_EQ(
+            result.get_value(schema, 0).as_int(),
+            i);
+        EXPECT_EQ(
+            result.get_value(schema, 1).as_string(),
+            "user");
+        EXPECT_EQ(
+            result.get_value(schema, 2).as_bool(),
+            i % 2 == 0);
+        EXPECT_EQ(
+            result.get_value(schema, 3).as_bigint(),
+            i * 100);
+    }
+}
+
+TEST_F(TableHeapTest, ScanMultiplePages)
+{
+    std::string large_name(500, 'x');
+
+    for (int i = 0; i < 100; i++)
+    {
+        Tuple tuple(
+            {Value::Integer(i),
+             Value::Varchar(large_name),
+             Value::Boolean(true),
+             Value::BigInt(i * 100)},
+            schema);
+
+        table_heap.insert_tuple(tuple);
+    }
+
+    std::vector<RID> rids = table_heap.scan();
+
+    ASSERT_EQ(rids.size(), 100);
+
+    for (int i = 0; i < 100; i++)
+    {
+        Tuple result;
+
+        ASSERT_TRUE(
+            table_heap.get_tuple(rids[i], result));
+
+        EXPECT_EQ(
+            result.get_value(schema, 0).as_int(),
+            i);
+    }
+}
