@@ -63,6 +63,8 @@ namespace db
         // checks enough remaining bytes
         bool has_space(size_t tuple_size);
 
+        uint16_t tuple_count();
+
     private:
         Page *page_;
 

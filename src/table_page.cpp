@@ -100,3 +100,8 @@ bool TablePage::get_tuple(const RID &rid, Tuple &tuple)
     tuple = Tuple(bytes);
     return true;
 }
+
+uint16_t TablePage::tuple_count()
+{
+    return header()->tuple_count;
+}
