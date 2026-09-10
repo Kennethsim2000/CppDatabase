@@ -23,6 +23,19 @@ namespace db
             return columns_[index];
         }
 
+        int column_index(const std::string &name) const
+        {
+            for (int i = 0; i < columns_.size(); i++)
+            {
+                if (columns_[i].name() == name)
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
     private:
         std::vector<Column> columns_;
     };
