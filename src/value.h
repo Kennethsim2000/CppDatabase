@@ -65,7 +65,7 @@ namespace db
             return string_value_;
         }
 
-        bool Value::compare(
+        bool compare(
             ComparisonType comparison,
             const Value &other) const
         {
