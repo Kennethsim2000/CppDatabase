@@ -16,6 +16,7 @@ add_library(db_core
     src/table_page.cpp
     src/table_heap.cpp
     src/tuple.cpp
+    src/predicate.cpp
 )
 
 add_executable(databasecpp
