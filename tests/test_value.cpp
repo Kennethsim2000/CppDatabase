@@ -108,3 +108,26 @@ TEST(SchemaTest, CreateUsersSchema)
     EXPECT_EQ(age.name(), "age");
     EXPECT_EQ(age.type(), TypeId::INTEGER);
 }
+
+TEST(SchemaTest, ColumnIndex)
+{
+    Schema schema({Column("id", TypeId::INTEGER),
+                   Column("name", TypeId::VARCHAR),
+                   Column("active", TypeId::BOOLEAN),
+                   Column("balance", TypeId::BIGINT)});
+
+    EXPECT_EQ(schema.column_index("id"), 0);
+    EXPECT_EQ(schema.column_index("name"), 1);
+    EXPECT_EQ(schema.column_index("active"), 2);
+    EXPECT_EQ(schema.column_index("balance"), 3);
+}
+
+TEST(SchemaTest, ColumnIndexReturnsMinusOneForUnknownColumn)
+{
+    Schema schema({Column("id", TypeId::INTEGER),
+                   Column("name", TypeId::VARCHAR)});
+
+    EXPECT_EQ(
+        schema.column_index("does_not_exist"),
+        -1);
+}
