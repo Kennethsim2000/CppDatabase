@@ -1,6 +1,6 @@
-using namespace db;
-
 #include "seq_scan_executor.h"
+
+using namespace db;
 
 SeqScanExecutor::SeqScanExecutor(
     TableHeap &table,
