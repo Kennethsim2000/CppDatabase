@@ -22,7 +22,7 @@ To run the TCP Server:
 
 ```bash
 cd build
-./mini_trader
+./databasecpp
 ```
 
 To run the tests:
