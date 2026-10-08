@@ -4,6 +4,28 @@
 
 using namespace db;
 
+static Schema build_output_schema(
+    const Schema &input_schema,
+    const std::vector<std::string> &column_names)
+{
+    std::vector<Column> columns;
+
+    for (const std::string &name : column_names)
+    {
+        int index = input_schema.column_index(name);
+
+        if (index == -1)
+        {
+            throw std::invalid_argument(
+                "Column does not exist: " + name);
+        }
+
+        columns.push_back(input_schema.column(index));
+    }
+
+    return Schema(std::move(columns));
+}
+
 Projection::Projection(
     const Schema &input_schema,
     const std::vector<std::string> &column_names)
@@ -35,26 +57,4 @@ Tuple Projection::project(const Tuple &tuple) const
 const Schema &Projection::output_schema() const
 {
     return output_schema_;
-}
-
-static Schema build_output_schema(
-    const Schema &input_schema,
-    const std::vector<std::string> &column_names)
-{
-    std::vector<Column> columns;
-
-    for (const std::string &name : column_names)
-    {
-        int index = input_schema.column_index(name);
-
-        if (index == -1)
-        {
-            throw std::invalid_argument(
-                "Column does not exist: " + name);
-        }
-
-        columns.push_back(input_schema.column(index));
-    }
-
-    return Schema(std::move(columns));
 }
