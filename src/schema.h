@@ -36,6 +36,11 @@ namespace db
             return -1;
         }
 
+        void add_column(const Column &column)
+        {
+            columns_.push_back(column);
+        }
+
     private:
         std::vector<Column> columns_;
     };
