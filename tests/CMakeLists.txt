@@ -1,7 +1,7 @@
 find_package(GTest REQUIRED) # tell CMAKE to find googleTest, add its include directories, link against it
 
 # Basic test
-add_executable(test_database test_projection.cpp test_seq_scan_executor.cpp test_predicate.cpp test_schema.cpp test_tuple.cpp test_value.cpp test_buffer_pool.cpp test_disk_manager.cpp test_page.cpp test_lru_replacer.cpp test_table_page.cpp test_table_heap.cpp)
+add_executable(test_database test_compound_predicate.cpp test_projection.cpp test_seq_scan_executor.cpp test_predicate.cpp test_schema.cpp test_tuple.cpp test_value.cpp test_buffer_pool.cpp test_disk_manager.cpp test_page.cpp test_lru_replacer.cpp test_table_page.cpp test_table_heap.cpp)
 target_link_libraries(test_database
     PRIVATE 
     db_core
