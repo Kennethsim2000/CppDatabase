@@ -5,7 +5,10 @@ using namespace db;
 SeqScanExecutor::SeqScanExecutor(
     TableHeap &table,
     const Schema &schema,
-    const Predicate &predicate) : table_(table), schema_(schema), predicate_(predicate)
+    const Expression &predicate)
+    : table_(table),
+      schema_(schema),
+      predicate_(predicate)
 {
 }
 

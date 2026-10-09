@@ -1,8 +1,11 @@
 #pragma once
 
+#include <vector>
+
+#include "expression.h"
 #include "table_heap.h"
+#include "tuple.h"
 #include "schema.h"
-#include "predicate.h"
 
 namespace db
 {
@@ -12,13 +15,13 @@ namespace db
         SeqScanExecutor(
             TableHeap &table,
             const Schema &schema,
-            const Predicate &predicate);
+            const Expression &predicate);
 
         std::vector<Tuple> execute();
 
     private:
         TableHeap &table_;
         const Schema &schema_;
-        const Predicate &predicate_;
+        const Expression &predicate_;
     };
 }

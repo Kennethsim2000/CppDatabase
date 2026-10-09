@@ -3,9 +3,9 @@
 using namespace db;
 
 CompoundPredicate::CompoundPredicate(
-    const Predicate &left,
+    const Expression &left,
     LogicalOperator op,
-    const Predicate &right)
+    const Expression &right)
     : left_(left),
       op_(op),
       right_(right)
@@ -17,15 +17,25 @@ bool CompoundPredicate::evaluate(
     const Schema &schema) const
 {
     bool left_result = left_.evaluate(tuple, schema);
-    bool right_result = right_.evaluate(tuple, schema);
 
-    switch (op_)
+    if (op_ == LogicalOperator::AND)
     {
-    case LogicalOperator::AND:
-        return left_result && right_result;
+        if (!left_result)
+        {
+            return false;
+        }
 
-    case LogicalOperator::OR:
-        return left_result || right_result;
+        return right_.evaluate(tuple, schema);
+    }
+
+    if (op_ == LogicalOperator::OR)
+    {
+        if (left_result)
+        {
+            return true;
+        }
+
+        return right_.evaluate(tuple, schema);
     }
 
     return false;

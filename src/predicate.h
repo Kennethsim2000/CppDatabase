@@ -6,10 +6,11 @@
 #include "schema.h"
 #include "value.h"
 #include "comparison.h"
+#include "expression.h"
 
 namespace db
 {
-    class Predicate
+    class Predicate : public Expression
     {
     public:
         Predicate(

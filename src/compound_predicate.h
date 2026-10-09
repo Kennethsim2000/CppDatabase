@@ -1,5 +1,6 @@
 #pragma once
 
+#include "expression.h"
 #include "predicate.h"
 
 namespace db
@@ -10,21 +11,21 @@ namespace db
         OR
     };
 
-    class CompoundPredicate
+    class CompoundPredicate : public Expression
     {
     public:
         CompoundPredicate(
-            const Predicate &left,
+            const Expression &left,
             LogicalOperator op,
-            const Predicate &right);
+            const Expression &right);
 
         bool evaluate(
             const Tuple &tuple,
-            const Schema &schema) const;
+            const Schema &schema) const override;
 
     private:
-        const Predicate &left_;
+        const Expression &left_;
         LogicalOperator op_;
-        const Predicate &right_;
+        const Expression &right_;
     };
 }
