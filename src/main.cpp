@@ -1,13 +1,11 @@
-// ================================
-// File: src/main.cpp
-// Entry point – wire everything together
-// ================================
 #include <iostream>
 #include <vector>
 
 #include "buffer_pool.h"
+#include "compound_predicate.h"
 #include "disk_manager.h"
 #include "predicate.h"
+#include "projection.h"
 #include "schema.h"
 #include "seq_scan_executor.h"
 #include "table_heap.h"
@@ -18,68 +16,88 @@ using namespace db;
 
 int main()
 {
-    // TODO:
-    // 1. Initialize DiskManager
-    // 2. Initialize BufferPoolManager
-    // 3. Create BTree index
-    // 4. Start transactions
-    // 5. Insert / query data
     DiskManager disk("database.db");
     BufferPoolManager bpm(disk, 10);
 
     Schema schema({Column("id", TypeId::INTEGER),
                    Column("name", TypeId::VARCHAR),
-                   Column("age", TypeId::INTEGER)});
+                   Column("age", TypeId::INTEGER),
+                   Column("active", TypeId::BOOLEAN)});
 
     TableHeap table(bpm);
 
-    table.insert_tuple(
-        Tuple({Value::Integer(1),
-               Value::Varchar("Kenneth"),
-               Value::Integer(24)},
-              schema));
+    table.insert_tuple(Tuple({Value::Integer(1),
+                              Value::Varchar("Kenneth"),
+                              Value::Integer(24),
+                              Value::Boolean(true)},
+                             schema));
 
-    table.insert_tuple(
-        Tuple({Value::Integer(2),
-               Value::Varchar("Alice"),
-               Value::Integer(30)},
-              schema));
+    table.insert_tuple(Tuple({Value::Integer(2),
+                              Value::Varchar("Alice"),
+                              Value::Integer(30),
+                              Value::Boolean(true)},
+                             schema));
 
-    table.insert_tuple(
-        Tuple({Value::Integer(3),
-               Value::Varchar("Bob"),
-               Value::Integer(20)},
-              schema));
+    table.insert_tuple(Tuple({Value::Integer(3),
+                              Value::Varchar("Bob"),
+                              Value::Integer(20),
+                              Value::Boolean(true)},
+                             schema));
 
-    table.insert_tuple(
-        Tuple({Value::Integer(4),
-               Value::Varchar("John"),
-               Value::Integer(35)},
-              schema));
+    table.insert_tuple(Tuple({Value::Integer(4),
+                              Value::Varchar("John"),
+                              Value::Integer(35),
+                              Value::Boolean(false)},
+                             schema));
 
-    Predicate predicate(
+    table.insert_tuple(Tuple({Value::Integer(5),
+                              Value::Varchar("Emily"),
+                              Value::Integer(28),
+                              Value::Boolean(true)},
+                             schema));
+
+    Predicate age_predicate(
         "age",
         ComparisonType::GREATER_THAN,
         Value::Integer(25));
 
+    Predicate active_predicate(
+        "active",
+        ComparisonType::EQUAL,
+        Value::Boolean(true));
+
+    CompoundPredicate combined_predicate(
+        age_predicate,
+        LogicalOperator::AND,
+        active_predicate);
+
     SeqScanExecutor executor(
         table,
         schema,
-        predicate);
+        combined_predicate);
 
     std::vector<Tuple> results = executor.execute();
 
-    std::cout << "Users with age > 25:\n";
+    Projection projection(
+        schema,
+        {"name", "age"});
+
+    std::cout << "Active users with age > 25:\n";
 
     for (const Tuple &tuple : results)
     {
-        int id = tuple.get_value(schema, 0).as_int();
-        std::string name = tuple.get_value(schema, 1).as_string();
-        int age = tuple.get_value(schema, 2).as_int();
+        Tuple projected_tuple = projection.project(tuple);
+
+        std::string name = projected_tuple
+                               .get_value(projection.output_schema(), 0)
+                               .as_string();
+
+        int age = projected_tuple
+                      .get_value(projection.output_schema(), 1)
+                      .as_int();
 
         std::cout
-            << "id=" << id
-            << ", name=" << name
+            << "name=" << name
             << ", age=" << age
             << '\n';
     }
