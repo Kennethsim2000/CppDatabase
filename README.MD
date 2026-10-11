@@ -18,7 +18,7 @@ cmake -DENABLE_TSAN=ON -DCMAKE_CXX_COMPILER=clang++ ..
 make
 ```
 
-To run the TCP Server:
+To run the database main example:
 
 ```bash
 cd build
