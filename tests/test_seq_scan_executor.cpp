@@ -35,14 +35,13 @@ TEST(SeqScanExecutorTest, NoMatchingTuples)
         ComparisonType::GREATER_THAN,
         Value::Integer(100));
 
-    SeqScanExecutor executor(
-        table,
-        schema,
-        predicate);
+    SeqScanExecutor executor(table, schema, predicate);
+    executor.init();
 
-    std::vector<Tuple> results = executor.execute();
+    Tuple tuple;
+    RID rid;
 
-    EXPECT_TRUE(results.empty());
+    EXPECT_FALSE(executor.next(tuple, rid));
 }
 
 TEST(SeqScanExecutorTest, ReturnsMatchingTuple)
@@ -69,22 +68,18 @@ TEST(SeqScanExecutorTest, ReturnsMatchingTuple)
         ComparisonType::EQUAL,
         Value::Integer(1));
 
-    SeqScanExecutor executor(
-        table,
-        schema,
-        predicate);
+    SeqScanExecutor executor(table, schema, predicate);
+    executor.init();
 
-    std::vector<Tuple> results = executor.execute();
+    Tuple tuple;
+    RID rid;
 
-    ASSERT_EQ(results.size(), 1);
+    ASSERT_TRUE(executor.next(tuple, rid));
 
-    EXPECT_EQ(
-        results[0].get_value(schema, 0).as_int(),
-        1);
+    EXPECT_EQ(tuple.get_value(schema, 0).as_int(), 1);
+    EXPECT_EQ(tuple.get_value(schema, 1).as_string(), "Kenneth");
 
-    EXPECT_EQ(
-        results[0].get_value(schema, 1).as_string(),
-        "Kenneth");
+    EXPECT_FALSE(executor.next(tuple, rid));
 }
 
 TEST(SeqScanExecutorTest, ReturnsMultipleMatchingTuples)
@@ -121,22 +116,22 @@ TEST(SeqScanExecutorTest, ReturnsMultipleMatchingTuples)
         ComparisonType::GREATER_THAN,
         Value::Integer(25));
 
-    SeqScanExecutor executor(
-        table,
-        schema,
-        predicate);
+    SeqScanExecutor executor(table, schema, predicate);
+    executor.init();
 
-    std::vector<Tuple> results = executor.execute();
+    Tuple tuple;
+    RID rid;
+    std::vector<int> result_ids;
 
-    ASSERT_EQ(results.size(), 2);
+    while (executor.next(tuple, rid))
+    {
+        result_ids.push_back(
+            tuple.get_value(schema, 0).as_int());
+    }
 
-    EXPECT_EQ(
-        results[0].get_value(schema, 0).as_int(),
-        2);
-
-    EXPECT_EQ(
-        results[1].get_value(schema, 0).as_int(),
-        3);
+    ASSERT_EQ(result_ids.size(), 2);
+    EXPECT_EQ(result_ids[0], 2);
+    EXPECT_EQ(result_ids[1], 3);
 }
 
 TEST(SeqScanExecutorTest, EmptyTable)
@@ -152,12 +147,11 @@ TEST(SeqScanExecutorTest, EmptyTable)
         ComparisonType::EQUAL,
         Value::Integer(1));
 
-    SeqScanExecutor executor(
-        table,
-        schema,
-        predicate);
+    SeqScanExecutor executor(table, schema, predicate);
+    executor.init();
 
-    std::vector<Tuple> results = executor.execute();
+    Tuple tuple;
+    RID rid;
 
-    EXPECT_TRUE(results.empty());
+    EXPECT_FALSE(executor.next(tuple, rid));
 }

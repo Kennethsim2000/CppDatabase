@@ -92,7 +92,7 @@ int main()
             tuple.get_value(output_schema, 1).as_int();
 
         std::cout << "name=" << name
-                  << ", age=" << age << ' ';
+                  << ", age=" << age << std::endl;
     }
 
     return 0;
