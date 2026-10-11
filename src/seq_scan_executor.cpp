@@ -12,26 +12,33 @@ SeqScanExecutor::SeqScanExecutor(
 {
 }
 
-std::vector<Tuple> SeqScanExecutor::execute()
+void SeqScanExecutor::init()
 {
-    std::vector<Tuple> results;
+    rids_ = table_.scan();
+    next_rid_index_ = 0;
+}
 
-    std::vector<RID> rids = table_.scan();
-
-    for (const RID &rid : rids)
+bool SeqScanExecutor::next(Tuple &tuple, RID &rid)
+{
+    while (next_rid_index_ < rids_.size())
     {
-        Tuple tuple;
+        RID current_rid = rids_[next_rid_index_++];
 
-        if (!table_.get_tuple(rid, tuple))
+        Tuple current_tuple;
+
+        if (!table_.get_tuple(current_rid, current_tuple))
         {
             continue;
         }
 
-        if (predicate_.evaluate(tuple, schema_))
+        if (predicate_.evaluate(current_tuple, schema_))
         {
-            results.push_back(tuple);
+            tuple = current_tuple;
+            rid = current_rid;
+
+            return true;
         }
     }
 
-    return results;
+    return false;
 }

@@ -2,14 +2,14 @@
 
 #include <vector>
 
-#include "expression.h"
+#include "executor.h"
 #include "table_heap.h"
-#include "tuple.h"
 #include "schema.h"
+#include "expression.h"
 
 namespace db
 {
-    class SeqScanExecutor
+    class SeqScanExecutor : public Executor
     {
     public:
         SeqScanExecutor(
@@ -17,11 +17,16 @@ namespace db
             const Schema &schema,
             const Expression &predicate);
 
-        std::vector<Tuple> execute();
+        void init() override;
+
+        bool next(Tuple &tuple, RID &rid) override;
 
     private:
         TableHeap &table_;
         const Schema &schema_;
         const Expression &predicate_;
+
+        std::vector<RID> rids_;
+        size_t next_rid_index_ = 0;
     };
 }
