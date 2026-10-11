@@ -20,6 +20,7 @@ add_library(db_core
     src/seq_scan_executor.cpp
     src/projection.cpp
     src/compound_predicate.cpp
+    src/projection_executor.cpp
 )
 
 add_executable(databasecpp
