@@ -5,12 +5,12 @@
 #include "compound_predicate.h"
 #include "disk_manager.h"
 #include "predicate.h"
-#include "projection.h"
 #include "schema.h"
 #include "seq_scan_executor.h"
 #include "table_heap.h"
 #include "tuple.h"
 #include "value.h"
+#include "projection_executor.h"
 
 using namespace db;
 
@@ -71,35 +71,28 @@ int main()
         LogicalOperator::AND,
         active_predicate);
 
-    SeqScanExecutor executor(
-        table,
-        schema,
-        combined_predicate);
+    SeqScanExecutor scan(table, schema, combined_predicate);
 
-    std::vector<Tuple> results = executor.execute();
-
-    Projection projection(
+    ProjectionExecutor projection(
+        scan,
         schema,
         {"name", "age"});
 
-    std::cout << "Active users with age > 25:\n";
+    projection.init();
 
-    for (const Tuple &tuple : results)
+    Tuple tuple;
+    RID rid;
+    while (projection.next(tuple, rid))
     {
-        Tuple projected_tuple = projection.project(tuple);
+        const Schema &output_schema = projection.output_schema();
 
-        std::string name = projected_tuple
-                               .get_value(projection.output_schema(), 0)
-                               .as_string();
+        std::string name =
+            tuple.get_value(output_schema, 0).as_string();
+        int age =
+            tuple.get_value(output_schema, 1).as_int();
 
-        int age = projected_tuple
-                      .get_value(projection.output_schema(), 1)
-                      .as_int();
-
-        std::cout
-            << "name=" << name
-            << ", age=" << age
-            << '\n';
+        std::cout << "name=" << name
+                  << ", age=" << age << ' ';
     }
 
     return 0;
