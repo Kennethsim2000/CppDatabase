@@ -58,6 +58,7 @@ target_link_libraries(databasecpp PRIVATE db_core)
 target_include_directories(db_core
     PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/index
 )
 
 if (SANITIZER_FLAGS)
