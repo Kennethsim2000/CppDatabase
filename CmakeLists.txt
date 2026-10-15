@@ -21,6 +21,7 @@ add_library(db_core
     src/projection.cpp
     src/compound_predicate.cpp
     src/execution/projection_executor.cpp
+    src/execution/index_scan_executor.cpp
 )
 
 add_executable(databasecpp
