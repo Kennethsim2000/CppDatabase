@@ -17,10 +17,10 @@ add_library(db_core
     src/table_heap.cpp
     src/tuple.cpp
     src/predicate.cpp
-    src/seq_scan_executor.cpp
+    src/execution/seq_scan_executor.cpp
     src/projection.cpp
     src/compound_predicate.cpp
-    src/projection_executor.cpp
+    src/execution/projection_executor.cpp
 )
 
 add_executable(databasecpp
@@ -59,6 +59,7 @@ target_include_directories(db_core
     PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}/src/index
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/execution
 )
 
 if (SANITIZER_FLAGS)
