@@ -108,6 +108,12 @@ namespace db
 
             Node *leaf = find_leaf(key);
 
+            // The tree is empty.
+            if (leaf == nullptr)
+            {
+                return false;
+            }
+
             auto it = std::lower_bound(
                 leaf->keys.begin(),
                 leaf->keys.end(),
@@ -161,6 +167,12 @@ namespace db
         Node *find_leaf(int key) const
         {
             Node *current = root_;
+
+            // An empty tree has no leaf to search.
+            if (current == nullptr)
+            {
+                return nullptr;
+            }
 
             while (!current->is_leaf)
             {
