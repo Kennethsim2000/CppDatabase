@@ -1,4 +1,3 @@
-
 #include <algorithm>
 #include <cstdint>
 #include <numeric>
@@ -25,12 +24,27 @@ namespace db
         EXPECT_EQ(expected.slot_num, actual.slot_num);
     }
 
+    static void expect_rids_eq(
+        const std::vector<RID> &expected,
+        const std::vector<RID> &actual)
+    {
+        ASSERT_EQ(expected.size(), actual.size());
+
+        for (size_t i = 0; i < expected.size(); ++i)
+        {
+            expect_rid_eq(expected[i], actual[i]);
+        }
+    }
+
     TEST(BPlusTreeTest, SearchEmptyTree)
     {
         BPlusTree tree;
         RID result;
+        std::vector<RID> results;
 
         EXPECT_FALSE(tree.search(10, result));
+        EXPECT_FALSE(tree.search_all(10, results));
+        EXPECT_TRUE(results.empty());
     }
 
     TEST(BPlusTreeTest, InsertAndSearchSingleKey)
@@ -42,25 +56,34 @@ namespace db
         EXPECT_TRUE(tree.insert(10, expected));
 
         RID result;
-        EXPECT_TRUE(tree.search(10, result));
-
+        ASSERT_TRUE(tree.search(10, result));
         expect_rid_eq(expected, result);
+
+        std::vector<RID> results;
+        ASSERT_TRUE(tree.search_all(10, results));
+        expect_rids_eq({expected}, results);
     }
 
-    TEST(BPlusTreeTest, RejectDuplicateKey)
+    TEST(BPlusTreeTest, InsertDuplicateKeyStoresMultipleRids)
     {
         BPlusTree tree;
 
-        RID original_rid = make_rid(10);
-        RID duplicate_rid = make_rid(20);
+        RID first_rid = make_rid(10);
+        RID second_rid = make_rid(20);
+        RID third_rid = make_rid(30);
 
-        EXPECT_TRUE(tree.insert(10, original_rid));
-        EXPECT_FALSE(tree.insert(10, duplicate_rid));
+        EXPECT_TRUE(tree.insert(10, first_rid));
+
+        EXPECT_FALSE(tree.insert(10, second_rid));
+        EXPECT_FALSE(tree.insert(10, third_rid));
 
         RID result;
-        EXPECT_TRUE(tree.search(10, result));
+        ASSERT_TRUE(tree.search(10, result));
+        expect_rid_eq(first_rid, result);
 
-        expect_rid_eq(original_rid, result);
+        std::vector<RID> results;
+        ASSERT_TRUE(tree.search_all(10, results));
+        expect_rids_eq({first_rid, second_rid, third_rid}, results);
     }
 
     TEST(BPlusTreeTest, SearchMissingKey)
@@ -72,10 +95,13 @@ namespace db
         tree.insert(30, make_rid(30));
 
         RID result;
-
         EXPECT_FALSE(tree.search(15, result));
         EXPECT_FALSE(tree.search(5, result));
         EXPECT_FALSE(tree.search(40, result));
+
+        std::vector<RID> results = {make_rid(999)};
+        EXPECT_FALSE(tree.search_all(15, results));
+        EXPECT_TRUE(results.empty());
     }
 
     TEST(BPlusTreeTest, SplitLeafNodes)
@@ -84,7 +110,7 @@ namespace db
 
         for (int key = 0; key < 20; ++key)
         {
-            EXPECT_TRUE(tree.insert(key, make_rid(key)));
+            ASSERT_TRUE(tree.insert(key, make_rid(key)));
         }
 
         for (int key = 0; key < 20; ++key)
@@ -119,13 +145,50 @@ namespace db
         }
     }
 
+    TEST(BPlusTreeTest, DuplicateRidsRemainSearchableAfterSplits)
+    {
+        BPlusTree tree(3);
+
+        // Insert enough distinct keys to trigger both leaf and internal splits.
+        for (int key = 0; key < 100; ++key)
+        {
+            ASSERT_TRUE(tree.insert(key, make_rid(key)));
+        }
+
+        const std::vector<RID> duplicates = {
+            make_rid(1001),
+            make_rid(1002),
+            make_rid(1003)};
+
+        // Key 42 already exists. Adding more RIDs must not create a new key.
+        for (const RID &rid : duplicates)
+        {
+            EXPECT_FALSE(tree.insert(42, rid));
+        }
+
+        std::vector<RID> results;
+        ASSERT_TRUE(tree.search_all(42, results));
+
+        std::vector<RID> expected = {make_rid(42)};
+        expected.insert(expected.end(), duplicates.begin(), duplicates.end());
+        expect_rids_eq(expected, results);
+
+        for (int key = 0; key < 100; ++key)
+        {
+            RID result;
+            ASSERT_TRUE(tree.search(key, result))
+                << "Could not find key " << key;
+            expect_rid_eq(make_rid(key), result);
+        }
+    }
+
     TEST(BPlusTreeTest, InsertDescendingOrder)
     {
         BPlusTree tree(3);
 
         for (int key = 199; key >= 0; --key)
         {
-            EXPECT_TRUE(tree.insert(key, make_rid(key)));
+            ASSERT_TRUE(tree.insert(key, make_rid(key)));
         }
 
         for (int key = 0; key < 200; ++key)
@@ -169,7 +232,7 @@ namespace db
 
         for (int key = -50; key <= 50; ++key)
         {
-            EXPECT_TRUE(tree.insert(key, make_rid(key)));
+            ASSERT_TRUE(tree.insert(key, make_rid(key)));
         }
 
         for (int key = -50; key <= 50; ++key)
