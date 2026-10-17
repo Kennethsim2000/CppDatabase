@@ -30,8 +30,9 @@ namespace db
             // keys[i] corresponds to values[i].
             std::vector<int> keys;
 
-            // Used only by leaf nodes.
-            std::vector<RID> values;
+            // For leaf nodes:
+            // Each key maps to one or more RIDs.
+            std::vector<std::vector<RID>> values;
 
             // Used only by internal nodes.
             std::vector<Node *> children;
@@ -51,14 +52,17 @@ namespace db
             }
         }
 
+        // Returns true if a new distinct key was inserted.
         // Returns false if the key already exists.
+        // For duplicate keys, the RID is still appended to the existing key.
         bool insert(int key, const RID &rid)
         {
+            // Case 1: The tree is empty.
             if (root_ == nullptr)
             {
                 root_ = create_node(true);
                 root_->keys.push_back(key);
-                root_->values.push_back(rid);
+                root_->values.push_back(std::vector<RID>{rid});
                 return true;
             }
 
@@ -73,18 +77,21 @@ namespace db
                 static_cast<std::size_t>(
                     it - leaf->keys.begin());
 
-            // This initial implementation uses unique keys.
+            // Case 2: The key already exists.
             if (it != leaf->keys.end() && *it == key)
             {
+                leaf->values[index].push_back(rid);
                 return false;
             }
 
+            // Case 3: Insert a new distinct key.
             leaf->keys.insert(it, key);
 
             leaf->values.insert(
                 leaf->values.begin() + index,
-                rid);
+                std::vector<RID>{rid});
 
+            // Split the leaf if it exceeds its capacity.
             if (leaf->keys.size() > max_keys_)
             {
                 split_leaf(leaf);
@@ -93,13 +100,11 @@ namespace db
             return true;
         }
 
-        // Returns true if the key exists and writes its RID.
-        bool search(int key, RID &rid) const
+        bool search_all(
+            int key,
+            std::vector<RID> &results) const
         {
-            if (root_ == nullptr)
-            {
-                return false;
-            }
+            results.clear();
 
             Node *leaf = find_leaf(key);
 
@@ -114,10 +119,26 @@ namespace db
             }
 
             std::size_t index =
-                static_cast<std::size_t>(
-                    it - leaf->keys.begin());
+                static_cast<std::size_t>(it - leaf->keys.begin());
 
-            rid = leaf->values[index];
+            results = leaf->values[index];
+
+            return !results.empty();
+        }
+
+        bool search(int key, RID &result) const
+        {
+            std::vector<RID> results;
+
+            if (!search_all(key, results))
+            {
+                return false;
+            }
+
+            // Backwards-compatible behavior:
+            // return the first RID associated with this key.
+            result = results.front();
+
             return true;
         }
 
