@@ -1,7 +1,7 @@
-
 #include <gtest/gtest.h>
 
 #include "execution/index_scan_executor.h"
+#include "execution/projection_executor.h"
 #include "buffer_pool.h"
 #include "disk_manager.h"
 #include "table_heap.h"
@@ -87,6 +87,49 @@ TEST_F(IndexScanExecutorTest, ReturnsFalseAfterFirstResult)
     EXPECT_EQ(result.get_value(schema, 0).as_int(), 10);
 
     EXPECT_FALSE(executor.next(result, rid));
+}
+
+TEST_F(IndexScanExecutorTest, ReturnsAllTuplesForDuplicateKey)
+{
+    insert_user(7, 25);
+
+    Tuple duplicate(
+        {Value::Integer(7),
+         Value::Integer(30)},
+        schema);
+    RID duplicate_rid = table.insert_tuple(duplicate);
+    EXPECT_FALSE(index.insert(7, duplicate_rid));
+
+    IndexScanExecutor executor(table, index, 7);
+    executor.init();
+
+    Tuple result;
+    RID rid;
+
+    ASSERT_TRUE(executor.next(result, rid));
+    EXPECT_EQ(result.get_value(schema, 1).as_int(), 25);
+
+    ASSERT_TRUE(executor.next(result, rid));
+    EXPECT_EQ(result.get_value(schema, 1).as_int(), 30);
+
+    EXPECT_FALSE(executor.next(result, rid));
+}
+
+TEST_F(IndexScanExecutorTest, CanBeComposedWithProjectionExecutor)
+{
+    insert_user(1, 25);
+    insert_user(2, 30);
+
+    IndexScanExecutor index_scan(table, index, 2);
+    ProjectionExecutor projection(index_scan, schema, {"age"});
+    projection.init();
+
+    Tuple result;
+    RID rid;
+
+    ASSERT_TRUE(projection.next(result, rid));
+    EXPECT_EQ(result.get_value(projection.output_schema(), 0).as_int(), 30);
+    EXPECT_FALSE(projection.next(result, rid));
 }
 
 TEST_F(IndexScanExecutorTest, InitResetsExecutor)
