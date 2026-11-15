@@ -1,6 +1,8 @@
-
 #pragma once
 
+#include <vector>
+
+#include "executor.h"
 #include "index/b_plus_tree.h"
 #include "table_heap.h"
 #include "tuple.h"
@@ -9,7 +11,7 @@
 namespace db
 {
 
-    class IndexScanExecutor
+    class IndexScanExecutor : public Executor
     {
     public:
         IndexScanExecutor(
@@ -17,16 +19,17 @@ namespace db
             const BPlusTree &index,
             int key);
 
-        void init();
+        void init() override;
 
-        bool next(Tuple &tuple, RID &rid);
+        bool next(Tuple &tuple, RID &rid) override;
 
     private:
         TableHeap &table_heap_;
         const BPlusTree &index_;
         int key_;
 
-        bool executed_ = false;
+        std::vector<RID> rids_;
+        std::size_t next_rid_index_ = 0;
     };
 
 }
