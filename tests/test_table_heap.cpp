@@ -6,6 +6,7 @@
 #include "table_heap.h"
 #include "tuple.h"
 #include "value.h"
+#include "index/b_plus_tree.h"
 
 using namespace db;
 
@@ -289,4 +290,51 @@ TEST_F(TableHeapTest, ScanMultiplePages)
             result.get_value(schema, 0).as_int(),
             i);
     }
+}
+
+TEST_F(TableHeapTest, RegisteredIndexTracksExistingAndNewTuples)
+{
+    BPlusTree index;
+
+    // Rows inserted before registration must be backfilled.
+    for (int id : {7, 3, 7})
+    {
+        Tuple tuple(
+            {Value::Integer(id), Value::Varchar("user"),
+             Value::Boolean(true), Value::BigInt(id * 100)},
+            schema);
+        table_heap.insert_tuple(tuple);
+    }
+
+    ASSERT_TRUE(table_heap.add_index(index, schema, 0));
+
+    std::vector<RID> results;
+    ASSERT_TRUE(index.search_all(7, results));
+    ASSERT_EQ(results.size(), 2);
+
+    Tuple new_tuple(
+        {Value::Integer(7), Value::Varchar("new-user"),
+         Value::Boolean(false), Value::BigInt(700)},
+        schema);
+    RID new_rid = table_heap.insert_tuple(new_tuple);
+
+    ASSERT_TRUE(index.search_all(7, results));
+    ASSERT_EQ(results.size(), 3);
+    EXPECT_EQ(results.back().page_id, new_rid.page_id);
+    EXPECT_EQ(results.back().slot_num, new_rid.slot_num);
+
+    ASSERT_TRUE(index.search_all(3, results));
+    ASSERT_EQ(results.size(), 1);
+}
+
+TEST_F(TableHeapTest, RejectsInvalidIndexDefinitions)
+{
+    BPlusTree index;
+    EXPECT_FALSE(table_heap.add_index(index, schema, schema.column_count()));
+    EXPECT_TRUE(index.empty());
+
+    Schema non_integer_schema{{Column("name", TypeId::VARCHAR)}};
+    BPlusTree varchar_index;
+    EXPECT_FALSE(table_heap.add_index(varchar_index, non_integer_schema, 0));
+    EXPECT_TRUE(varchar_index.empty());
 }
