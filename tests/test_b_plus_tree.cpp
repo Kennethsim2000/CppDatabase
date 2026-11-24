@@ -312,7 +312,7 @@ namespace db
         std::vector<std::pair<int, RID>> results;
         tree.search_range(9, 11, results);
 
-        ASSERT_EQ(results.size(), 4);
+        ASSERT_EQ(results.size(), 5);
         EXPECT_EQ(results[0].first, 9);
         expect_rid_eq(make_rid(9), results[0].second);
         EXPECT_EQ(results[1].first, 10);
@@ -321,6 +321,8 @@ namespace db
         expect_rid_eq(duplicate_one, results[2].second);
         EXPECT_EQ(results[3].first, 10);
         expect_rid_eq(duplicate_two, results[3].second);
+        EXPECT_EQ(results[4].first, 11);
+        expect_rid_eq(make_rid(11), results[4].second);
     }
 
     TEST(BPlusTreeTest, RangeSearchIncludesBothBounds)
