@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <memory>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 #include "rid.h"
@@ -150,6 +151,51 @@ namespace db
             result = results.front();
 
             return true;
+        }
+
+        // Returns every (key, RID) pair in the inclusive range [lower_bound, upper_bound].
+        // Results are ordered by key, then by RID insertion order for duplicate keys.
+        void search_range(
+            int lower_bound,
+            int upper_bound,
+            std::vector<std::pair<int, RID>> &results) const
+        {
+            results.clear();
+
+            if (root_ == nullptr || lower_bound > upper_bound)
+            {
+                return;
+            }
+
+            Node *leaf = find_leaf(lower_bound);
+
+            // Leaf nodes are linked in key order, so the scan only visits
+            // leaves that may contain keys in the requested range.
+            while (leaf != nullptr)
+            {
+                auto it = std::lower_bound(
+                    leaf->keys.begin(),
+                    leaf->keys.end(),
+                    lower_bound);
+
+                for (; it != leaf->keys.end(); ++it)
+                {
+                    if (*it > upper_bound)
+                    {
+                        return;
+                    }
+
+                    const std::size_t index =
+                        static_cast<std::size_t>(it - leaf->keys.begin());
+
+                    for (const RID &rid : leaf->values[index])
+                    {
+                        results.emplace_back(*it, rid);
+                    }
+                }
+
+                leaf = leaf->next;
+            }
         }
 
     private:

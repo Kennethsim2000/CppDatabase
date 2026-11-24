@@ -248,4 +248,129 @@ namespace db
         EXPECT_FALSE(tree.search(51, result));
     }
 
+
+    TEST(BPlusTreeTest, RangeSearchOnEmptyTreeReturnsNoResults)
+    {
+        BPlusTree tree;
+        std::vector<std::pair<int, RID>> results = {
+            {1, make_rid(1)}};
+
+        tree.search_range(0, 10, results);
+
+        EXPECT_TRUE(results.empty());
+    }
+
+    TEST(BPlusTreeTest, RangeSearchReturnsSingleMatchingKey)
+    {
+        BPlusTree tree;
+        tree.insert(10, make_rid(10));
+        tree.insert(20, make_rid(20));
+
+        std::vector<std::pair<int, RID>> results;
+        tree.search_range(10, 10, results);
+
+        ASSERT_EQ(results.size(), 1);
+        EXPECT_EQ(results[0].first, 10);
+        expect_rid_eq(make_rid(10), results[0].second);
+    }
+
+    TEST(BPlusTreeTest, RangeSearchSpansMultipleLeafNodes)
+    {
+        BPlusTree tree(3);
+
+        for (int key = 0; key < 30; ++key)
+        {
+            ASSERT_TRUE(tree.insert(key, make_rid(key)));
+        }
+
+        std::vector<std::pair<int, RID>> results;
+        tree.search_range(8, 22, results);
+
+        ASSERT_EQ(results.size(), 15);
+        for (int key = 8; key <= 22; ++key)
+        {
+            const auto &entry = results[static_cast<std::size_t>(key - 8)];
+            EXPECT_EQ(entry.first, key);
+            expect_rid_eq(make_rid(key), entry.second);
+        }
+    }
+
+    TEST(BPlusTreeTest, RangeSearchIncludesAllRidsForDuplicateKeys)
+    {
+        BPlusTree tree(3);
+
+        for (int key = 0; key < 20; ++key)
+        {
+            ASSERT_TRUE(tree.insert(key, make_rid(key)));
+        }
+
+        const RID duplicate_one = make_rid(1001);
+        const RID duplicate_two = make_rid(1002);
+        EXPECT_FALSE(tree.insert(10, duplicate_one));
+        EXPECT_FALSE(tree.insert(10, duplicate_two));
+
+        std::vector<std::pair<int, RID>> results;
+        tree.search_range(9, 11, results);
+
+        ASSERT_EQ(results.size(), 5);
+        EXPECT_EQ(results[0].first, 9);
+        expect_rid_eq(make_rid(9), results[0].second);
+        EXPECT_EQ(results[1].first, 10);
+        expect_rid_eq(make_rid(10), results[1].second);
+        EXPECT_EQ(results[2].first, 10);
+        expect_rid_eq(duplicate_one, results[2].second);
+        EXPECT_EQ(results[3].first, 10);
+        expect_rid_eq(duplicate_two, results[3].second);
+        EXPECT_EQ(results[4].first, 11);
+        expect_rid_eq(make_rid(11), results[4].second);
+    }
+
+    TEST(BPlusTreeTest, RangeSearchIncludesBothBounds)
+    {
+        BPlusTree tree;
+
+        for (int key = 1; key <= 5; ++key)
+        {
+            tree.insert(key, make_rid(key));
+        }
+
+        std::vector<std::pair<int, RID>> results;
+        tree.search_range(2, 4, results);
+
+        ASSERT_EQ(results.size(), 3);
+        EXPECT_EQ(results.front().first, 2);
+        EXPECT_EQ(results.back().first, 4);
+    }
+
+    TEST(BPlusTreeTest, RangeSearchReturnsEmptyForNoMatchesOrInvalidRange)
+    {
+        BPlusTree tree;
+        tree.insert(10, make_rid(10));
+        tree.insert(20, make_rid(20));
+
+        std::vector<std::pair<int, RID>> results;
+        tree.search_range(11, 19, results);
+        EXPECT_TRUE(results.empty());
+
+        tree.search_range(20, 10, results);
+        EXPECT_TRUE(results.empty());
+    }
+
+    TEST(BPlusTreeTest, RangeSearchCanExtendBeyondTreeKeys)
+    {
+        BPlusTree tree;
+
+        for (int key = 5; key <= 10; ++key)
+        {
+            tree.insert(key, make_rid(key));
+        }
+
+        std::vector<std::pair<int, RID>> results;
+        tree.search_range(-100, 100, results);
+
+        ASSERT_EQ(results.size(), 6);
+        EXPECT_EQ(results.front().first, 5);
+        EXPECT_EQ(results.back().first, 10);
+    }
+
 }
