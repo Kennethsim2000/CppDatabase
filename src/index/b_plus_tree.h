@@ -6,7 +6,7 @@
 #include <stdexcept>
 #include <vector>
 
-#include "table_heap.h"
+#include "rid.h"
 
 namespace db
 {
@@ -50,6 +50,11 @@ namespace db
                 throw std::invalid_argument(
                     "B+ tree max_keys must be at least 3");
             }
+        }
+
+        bool empty() const
+        {
+            return root_ == nullptr;
         }
 
         // Returns true if a new distinct key was inserted.

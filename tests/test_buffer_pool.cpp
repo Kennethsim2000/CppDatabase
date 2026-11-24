@@ -1,4 +1,6 @@
 #include <gtest/gtest.h>
+#include <filesystem>
+
 #include "disk_manager.h"
 #include "page.h"
 #include "buffer_pool.h"

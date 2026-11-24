@@ -5,6 +5,9 @@
 #pragma once
 
 #include <array>
+#include <cstring>
+#include <stdexcept>
+
 #include "types.h"
 
 namespace db

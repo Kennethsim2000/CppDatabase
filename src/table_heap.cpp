@@ -1,8 +1,45 @@
 #include "table_heap.h"
 
+#include <algorithm>
+#include "index/b_plus_tree.h"
+
 using namespace db;
 
-TableHeap::TableHeap(BufferPoolManager &bpm) : bpm_(bpm) {};
+TableHeap::TableHeap(BufferPoolManager &bpm) : bpm_(bpm) {}
+
+bool TableHeap::add_index(BPlusTree &index, const Schema &schema, std::size_t column_index)
+{
+    if (column_index >= schema.column_count() ||
+        schema.column(column_index).type() != TypeId::INTEGER ||
+        !index.empty())
+    {
+        return false;
+    }
+
+    const auto existing = std::find_if(
+        indexes_.begin(), indexes_.end(),
+        [&index](const IndexInfo &info) { return info.index == &index; });
+
+    if (existing != indexes_.end())
+    {
+        return false;
+    }
+
+    // Backfill tuples inserted before the index was registered.
+    for (const RID &rid : scan())
+    {
+        Tuple tuple;
+        if (!get_tuple(rid, tuple))
+        {
+            return false;
+        }
+
+        index.insert(tuple.get_value(schema, column_index).as_int(), rid);
+    }
+
+    indexes_.push_back(IndexInfo{&index, schema, column_index});
+    return true;
+}
 
 RID TableHeap::insert_tuple(const Tuple &tuple)
 {
@@ -20,6 +57,13 @@ RID TableHeap::insert_tuple(const Tuple &tuple)
         {
             tp.insert_tuple(tuple, rid);
             bpm_.unpin_page(pid);
+
+            for (const IndexInfo &info : indexes_)
+            {
+                const int key = tuple.get_value(info.schema, info.column_index).as_int();
+                info.index->insert(key, rid);
+            }
+
             return rid;
         }
         bpm_.unpin_page(pid);
@@ -29,12 +73,28 @@ RID TableHeap::insert_tuple(const Tuple &tuple)
     PageId new_pid = bpm_.fetch_next_page();
     Page *page = bpm_.fetch_page(new_pid);
 
+    if (page == nullptr)
+    {
+        return RID();
+    }
+
     TablePage tp(page);
     tp.init();
 
-    tp.insert_tuple(tuple, rid);
+    if (!tp.insert_tuple(tuple, rid))
+    {
+        bpm_.unpin_page(new_pid);
+        return RID();
+    }
+
     pages.push_back(new_pid);
     bpm_.unpin_page(new_pid);
+
+    for (const IndexInfo &info : indexes_)
+    {
+        const int key = tuple.get_value(info.schema, info.column_index).as_int();
+        info.index->insert(key, rid);
+    }
 
     return rid;
 };

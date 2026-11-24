@@ -1,18 +1,27 @@
 #pragma once
 
+#include <cstddef>
 #include <vector>
 
 #include "buffer_pool.h"
 #include "table_page.h"
 #include "tuple.h"
 #include "rid.h"
+#include "schema.h"
 
 namespace db
 {
+    class BPlusTree;
+
     class TableHeap
     {
     public:
         explicit TableHeap(BufferPoolManager &bpm);
+
+        // Register an INTEGER-column index. Existing rows are backfilled and
+        // subsequent inserts are added automatically. The index must be empty
+        // and must outlive this TableHeap.
+        bool add_index(BPlusTree &index, const Schema &schema, std::size_t column_index);
 
         /*
             This becomes the real database insertion
@@ -44,8 +53,16 @@ namespace db
         std::vector<RID> scan();
 
     private:
+        struct IndexInfo
+        {
+            BPlusTree *index;
+            Schema schema;
+            std::size_t column_index;
+        };
+
         BufferPoolManager &bpm_;
         std::vector<PageId> pages;
+        std::vector<IndexInfo> indexes_;
     };
 }
 
