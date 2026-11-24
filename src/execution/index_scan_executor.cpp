@@ -1,4 +1,3 @@
-
 #include "execution/index_scan_executor.h"
 
 namespace db
@@ -16,28 +15,29 @@ namespace db
 
     void IndexScanExecutor::init()
     {
-        executed_ = false;
+        rids_.clear();
+        index_.search_all(key_, rids_);
+        next_rid_index_ = 0;
     }
 
     bool IndexScanExecutor::next(Tuple &tuple, RID &rid)
     {
-        if (executed_)
+        while (next_rid_index_ < rids_.size())
         {
-            return false;
+            RID current_rid = rids_[next_rid_index_++];
+
+            Tuple current_tuple;
+
+            if (!table_heap_.get_tuple(current_rid, current_tuple))
+            {
+                continue;
+            }
+
+            tuple = current_tuple;
+            rid = current_rid;
+            return true;
         }
 
-        executed_ = true;
-
-        if (!index_.search(key_, rid))
-        {
-            return false;
-        }
-
-        if (!table_heap_.get_tuple(rid, tuple))
-        {
-            return false;
-        }
-
-        return true;
+        return false;
     }
 }
