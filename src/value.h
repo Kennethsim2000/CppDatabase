@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdexcept>
+
 #include "types.h"
 #include "comparison.h"
 
