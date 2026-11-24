@@ -68,5 +68,5 @@ if (SANITIZER_FLAGS)
     target_link_options(databasecpp PUBLIC ${SANITIZER_FLAGS})
 endif()
 
-enable_testing() 
-add_subdirectory(tests) #Go into this folder, read its CMakeLists.txt, and treat whatever is defined there as part of the same build
+enable_testing()
+add_subdirectory(tests)
